@@ -637,10 +637,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 AppSettings.baseFontSize = _tempFontSize;
                 AppSettings.fontFamily = _tempFontFamily;
                 AppSettings.primaryColor = _tempPrimaryColor;
-                if (_ownerPinController.text.length == 6)
+                if (_ownerPinController.text.length == 6) {
                   AppSettings.ownerPin = _ownerPinController.text;
-                if (_employeePinController.text.length == 6)
+                }
+                if (_employeePinController.text.length == 6) {
                   AppSettings.employeePins[0] = _employeePinController.text;
+                }
               });
               await AppSettings.saveSettings();
               AlrozanaApp.refreshApp(context);
@@ -1090,15 +1092,17 @@ class _DashboardScreenState extends State<DashboardScreen>
 
         setState(() => project.imageUrl = publicUrl);
         await ProjectManager.saveProjectsToCloud(_projects);
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('تم إرفاق الصورة بنجاح!'),
               backgroundColor: Colors.green));
+        }
       } catch (e) {
         debugPrint('خطأ رفع الصورة: $e');
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('فشل الرفع: $e'), backgroundColor: Colors.red));
+        }
       } finally {
         if (mounted) setState(() => _isLoadingImage = false);
       }
@@ -1228,7 +1232,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // --- التعديل الأخير: دالة العرض المتجاوبة (Responsive) ---
   Widget _buildProjectsArea() {
+    bool isMobile = MediaQuery.of(context).size.width < 600;
+
     if (_isGroupedByClient) {
       Map<String, List<ProjectModel>> groupedProjects = {};
       for (var p in sortedProjects) {
@@ -1293,7 +1300,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
               ),
-              _isGridView
+              (_isGridView && !isMobile)
                   ? LayoutBuilder(
                       builder: (context, constraints) => Wrap(
                           spacing: 10,
@@ -1315,7 +1322,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         },
       );
     } else {
-      return _isGridView
+      return (_isGridView && !isMobile)
           ? SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: LayoutBuilder(
