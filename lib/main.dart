@@ -994,7 +994,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // --- دالة عرض الصورة بحجم كامل ---
   void _showFullImage(String imageUrl) {
     showDialog(
       context: context,
@@ -1024,7 +1023,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // --- دالة حذف الصورة للمالك ---
   void _confirmRemoveImage(ProjectModel project) {
     showDialog(
       context: context,
@@ -1126,8 +1124,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 15,
                     children: [
                       Text('المتبقي: ${formatMoney(project.remainingAmount)}',
                           style: const TextStyle(
@@ -1232,9 +1231,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // --- التعديل الأخير: دالة العرض المتجاوبة (Responsive) ---
+  // --- معالجة التجاوب وتصحيح الشاشات الصغيرة جذرياً ---
   Widget _buildProjectsArea() {
-    bool isMobile = MediaQuery.of(context).size.width < 600;
+    // رفعنا سقف الجوال إلى 850 بكسل للتأكد التام أن كل الهواتف تعرض عمودياً
+    bool isMobile = MediaQuery.of(context).size.width < 850;
 
     if (_isGroupedByClient) {
       Map<String, List<ProjectModel>> groupedProjects = {};
@@ -1265,38 +1265,44 @@ class _DashboardScreenState extends State<DashboardScreen>
                             .colorScheme
                             .primary
                             .withOpacity(0.3))),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
                   children: [
-                    Row(children: [
-                      Icon(Icons.person,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20),
-                      const SizedBox(width: 8),
-                      Text('العميل: $client',
-                          style: TextStyle(
-                              fontSize: AppSettings.baseFontSize + 1,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary))
-                    ]),
-                    Row(children: [
-                      Text('(${clientProjects.length} مشاريع)',
-                          style: TextStyle(
+                    Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Icon(Icons.person,
                               color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12)),
-                      const SizedBox(width: 10),
-                      IconButton(
-                          icon: const Icon(Icons.print,
-                              size: 20, color: Colors.brown),
-                          onPressed: () =>
-                              DashboardScreen.generatePdfReportStatic(
-                                  context,
-                                  'تقرير مشاريع العميل: $client',
-                                  clientProjects),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints())
-                    ]),
+                              size: 20),
+                          const SizedBox(width: 8),
+                          Text('العميل: $client',
+                              style: TextStyle(
+                                  fontSize: AppSettings.baseFontSize + 1,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary))
+                        ]),
+                    Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text('(${clientProjects.length} مشاريع)',
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
+                          const SizedBox(width: 10),
+                          IconButton(
+                              icon: const Icon(Icons.print,
+                                  size: 20, color: Colors.brown),
+                              onPressed: () =>
+                                  DashboardScreen.generatePdfReportStatic(
+                                      context,
+                                      'تقرير مشاريع العميل: $client',
+                                      clientProjects),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints())
+                        ]),
                   ],
                 ),
               ),
@@ -1562,11 +1568,16 @@ class _DashboardScreenState extends State<DashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // --- معالجة ذكية للأزرار العلوية باستخدام Wrap بدلاً من Row ---
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 5,
+              runSpacing: 5,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 2,
                   children: [
                     Chip(
                         visualDensity: VisualDensity.compact,
@@ -1576,7 +1587,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 color: primary,
                                 fontSize: 13)),
                         backgroundColor: primary.withOpacity(0.1)),
-                    const SizedBox(width: 5),
                     IconButton(
                         icon: const Icon(Icons.print,
                             size: 18, color: Colors.brown),
@@ -1587,17 +1597,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 [project]),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints()),
-                    const SizedBox(width: 5),
                     IconButton(
                         icon: const Icon(Icons.account_balance_wallet,
                             size: 18, color: Colors.green),
                         onPressed: () => _showPaymentsDialog(project),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints()),
-
-                    // --- إخفاء زر الكاميرا عن الموظفين وإظهاره للمالك فقط ---
-                    if (widget.isOwner) ...[
-                      const SizedBox(width: 5),
+                    if (widget.isOwner)
                       IconButton(
                         icon: const Icon(Icons.add_a_photo,
                             size: 18, color: Colors.blueAccent),
@@ -1605,26 +1611,28 @@ class _DashboardScreenState extends State<DashboardScreen>
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                    ],
                   ],
                 ),
                 if (widget.isOwner)
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    IconButton(
-                        icon: const Icon(Icons.edit,
-                            size: 20, color: Colors.blue),
-                        onPressed: () =>
-                            _showProjectDialog(projectToEdit: project),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints()),
-                    const SizedBox(width: 10),
-                    IconButton(
-                        icon: const Icon(Icons.delete,
-                            size: 20, color: Colors.red),
-                        onPressed: () => _confirmDeleteProject(project),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints())
-                  ])
+                  Wrap(
+                    spacing: 10,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      IconButton(
+                          icon: const Icon(Icons.edit,
+                              size: 20, color: Colors.blue),
+                          onPressed: () =>
+                              _showProjectDialog(projectToEdit: project),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints()),
+                      IconButton(
+                          icon: const Icon(Icons.delete,
+                              size: 20, color: Colors.red),
+                          onPressed: () => _confirmDeleteProject(project),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints())
+                    ],
+                  )
                 else
                   Chip(
                       visualDensity: VisualDensity.compact,
@@ -1640,7 +1648,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                     fontWeight: FontWeight.bold,
                     fontSize: AppSettings.baseFontSize + 2)),
 
-            // --- عرض الصورة مع إمكانية فتحها بحجم كامل + زر الحذف للمالك ---
             if (project.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -1695,17 +1702,24 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
 
             const SizedBox(height: 10),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('العقد: ${formatMoney(project.contractValue)}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 12)),
-              Text('المدفوع: ${formatMoney(project.totalPaid)}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                      fontSize: 12))
-            ]),
+
+            // --- معالجة ذكية للأرقام لمنع التصادم ---
+            Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 15, // مسافة أمان بين العقد والمدفوع
+                runSpacing: 5,
+                children: [
+                  Text('العقد: ${formatMoney(project.contractValue)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text('المدفوع: ${formatMoney(project.totalPaid)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                          fontSize: 12))
+                ]),
             const SizedBox(height: 10),
+
             if (isGrid) ...[
               Center(
                   child: SizedBox(
@@ -1735,7 +1749,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 10),
             ],
             const Divider(),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+
+            // --- معالجة مرنة للمتبقي ---
+            Wrap(alignment: WrapAlignment.spaceBetween, spacing: 15, children: [
               const Text('المتبقي:',
                   style: TextStyle(
                       color: Colors.red,
@@ -1747,6 +1763,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       fontWeight: FontWeight.bold,
                       fontSize: AppSettings.baseFontSize + 1))
             ]),
+
             if (project.notes.isNotEmpty) ...[
               const SizedBox(height: 10),
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
