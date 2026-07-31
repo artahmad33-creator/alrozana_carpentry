@@ -1231,11 +1231,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // --- معالجة التجاوب وتصحيح الشاشات الصغيرة جذرياً ---
+  // --- الحل الجذري للتجاوب (يجبر البطاقة على أخذ 100% للشاشات الصغيرة) ---
   Widget _buildProjectsArea() {
-    // رفعنا سقف الجوال إلى 850 بكسل للتأكد التام أن كل الهواتف تعرض عمودياً
-    bool isMobile = MediaQuery.of(context).size.width < 850;
-
     if (_isGroupedByClient) {
       Map<String, List<ProjectModel>> groupedProjects = {};
       for (var p in sortedProjects) {
@@ -1306,45 +1303,50 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
               ),
-              (_isGridView && !isMobile)
-                  ? LayoutBuilder(
-                      builder: (context, constraints) => Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: clientProjects
-                              .map((p) => SizedBox(
-                                  width: (constraints.maxWidth - 12) / 2,
-                                  child: _buildProjectCard(p, isGrid: true)))
-                              .toList()))
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: clientProjects.length,
-                      itemBuilder: (context, idx) => _buildProjectCard(
-                          clientProjects[idx],
-                          isGrid: false)),
+              // LayoutBuilder يحسب العرض المتاح بدقة
+              LayoutBuilder(builder: (context, constraints) {
+                // السحر هنا: إذا كانت الشاشة أقل من 800، العرض سيكون 100% (كامل الشاشة)
+                double cardWidth = constraints.maxWidth < 800
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - 12) / 2;
+                // تحديد شكل شريط الإنجاز: دائري للكمبيوتر، وخطي للجوال
+                bool showAsGrid = constraints.maxWidth > 800 && _isGridView;
+
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: clientProjects
+                      .map((p) => SizedBox(
+                          width: cardWidth,
+                          child: _buildProjectCard(p, isGrid: showAsGrid)))
+                      .toList(),
+                );
+              }),
             ],
           );
         },
       );
     } else {
-      return (_isGridView && !isMobile)
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: LayoutBuilder(
-                  builder: (context, constraints) => Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: sortedProjects
-                          .map((p) => SizedBox(
-                              width: (constraints.maxWidth - 12) / 2,
-                              child: _buildProjectCard(p, isGrid: true)))
-                          .toList())))
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: sortedProjects.length,
-              itemBuilder: (context, index) =>
-                  _buildProjectCard(sortedProjects[index], isGrid: false));
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: LayoutBuilder(builder: (context, constraints) {
+          // نفس السحر هنا
+          double cardWidth = constraints.maxWidth < 800
+              ? constraints.maxWidth
+              : (constraints.maxWidth - 12) / 2;
+          bool showAsGrid = constraints.maxWidth > 800 && _isGridView;
+
+          return Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: sortedProjects
+                .map((p) => SizedBox(
+                    width: cardWidth,
+                    child: _buildProjectCard(p, isGrid: showAsGrid)))
+                .toList(),
+          );
+        }),
+      );
     }
   }
 
@@ -1474,11 +1476,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   AppSettings.appTitle,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    fontFamily: AppSettings.fontFamily,
-                  ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      fontFamily: AppSettings.fontFamily),
                 ),
               ),
             ],
@@ -1561,14 +1562,13 @@ class _DashboardScreenState extends State<DashboardScreen>
     Color primary = Theme.of(context).colorScheme.primary;
     return Card(
       elevation: project.progress >= 1.0 ? 0 : 3,
-      margin: EdgeInsets.only(bottom: isGrid ? 0 : 15),
+      margin: EdgeInsets.only(bottom: 15),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // --- معالجة ذكية للأزرار العلوية باستخدام Wrap بدلاً من Row ---
             Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -1647,7 +1647,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: AppSettings.baseFontSize + 2)),
-
             if (project.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -1700,13 +1699,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
               ),
-
             const SizedBox(height: 10),
-
-            // --- معالجة ذكية للأرقام لمنع التصادم ---
             Wrap(
                 alignment: WrapAlignment.spaceBetween,
-                spacing: 15, // مسافة أمان بين العقد والمدفوع
+                spacing: 15,
                 runSpacing: 5,
                 children: [
                   Text('العقد: ${formatMoney(project.contractValue)}',
@@ -1719,7 +1715,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                           fontSize: 12))
                 ]),
             const SizedBox(height: 10),
-
             if (isGrid) ...[
               Center(
                   child: SizedBox(
@@ -1749,8 +1744,6 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 10),
             ],
             const Divider(),
-
-            // --- معالجة مرنة للمتبقي ---
             Wrap(alignment: WrapAlignment.spaceBetween, spacing: 15, children: [
               const Text('المتبقي:',
                   style: TextStyle(
@@ -1763,7 +1756,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                       fontWeight: FontWeight.bold,
                       fontSize: AppSettings.baseFontSize + 1))
             ]),
-
             if (project.notes.isNotEmpty) ...[
               const SizedBox(height: 10),
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
